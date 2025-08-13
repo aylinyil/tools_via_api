@@ -9,6 +9,7 @@ A Flask-based REST API that provides access to various analysis tools, currently
 - **File Upload Support**: Accept PDF files via multipart form data
 - **Extensible Architecture**: Easy to add new tools following the base tool pattern
 - **JSON Response**: Structured JSON responses for easy integration
+- **Docker Support**: Containerized deployment with GitHub Container Registry
 
 ## 🛠️ Technology Stack
 
@@ -16,27 +17,33 @@ A Flask-based REST API that provides access to various analysis tools, currently
 - **PDF Processing**: PyMuPDF (fitz) + pdfid
 - **Python Version**: 3.13+
 - **Virtual Environment**: Python venv
+- **Containerization**: Docker + Docker Compose
+- **CI/CD**: GitHub Actions
 
 ## 📋 Prerequisites
 
 - Python 3.13 or higher
 - pip (Python package installer)
 - Git (for cloning the repository)
+- Docker (for containerized deployment)
+- Docker Compose (for local development)
 
 ## 🚀 Installation & Setup
 
-### 1. Clone the Repository
+### Option 1: Local Development
+
+#### 1. Clone the Repository
 ```bash
 git clone <your-repository-url>
 cd tools_via_api
 ```
 
-### 2. Create Virtual Environment
+#### 2. Create Virtual Environment
 ```bash
 python3 -m venv .venv
 ```
 
-### 3. Activate Virtual Environment
+#### 3. Activate Virtual Environment
 
 **On macOS/Linux:**
 ```bash
@@ -53,25 +60,113 @@ source .venv/bin/activate
 source .venv/bin/activate.fish
 ```
 
-### 4. Install Dependencies
+#### 4. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-## 🏃‍♂️ Running the Application
-
-### Start the Flask Server
+#### 5. Start the Flask Server
 ```bash
 python app.py
 ```
 
-The server will start on `http://127.0.0.1:5001` (note: port 5001 to avoid conflicts with macOS AirTunes service).
+The server will start on `http://127.0.0.1:5001`.
 
-### Development Mode
-The application runs in debug mode by default, which provides:
-- Auto-reload on code changes
-- Detailed error messages
-- Debugger interface
+### Option 2: Docker Development
+
+#### 1. Build and Run with Docker Compose
+```bash
+# Build and start the services
+docker-compose up --build
+
+# Run in background
+docker-compose up -d --build
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+#### 2. Build and Run with Docker
+```bash
+# Build the image
+docker build -t tools-via-api .
+
+# Run the container
+docker run -p 5001:5001 tools-via-api
+
+# Run in background
+docker run -d -p 5001:5001 --name tools-api tools-via-api
+```
+
+## 🐳 Docker Deployment
+
+### Building the Image
+```bash
+# Build locally
+docker build -t tools-via-api .
+
+# Build with specific tag
+docker build -t tools-via-api:v1.0.0 .
+```
+
+### Running the Container
+```bash
+# Basic run
+docker run -p 5001:5001 tools-via-api
+
+# With environment variables
+docker run -p 5001:5001 \
+  -e FLASK_ENV=production \
+  -e FLASK_DEBUG=0 \
+  tools-via-api
+
+# With volume mounts
+docker run -p 5001:5001 \
+  -v $(pwd)/logs:/app/logs \
+  tools-via-api
+```
+
+### Production Deployment
+```bash
+# Run with nginx reverse proxy
+docker-compose --profile production up -d
+
+# Scale the API service
+docker-compose up -d --scale tools-api=3
+```
+
+## 📦 GitHub Container Registry
+
+This project is configured to automatically publish Docker images to GitHub Container Registry (GHCR) via GitHub Actions.
+
+### Automatic Publishing
+- **Branches**: Images are built and published for `main` and `develop` branches
+- **Tags**: Versioned releases (e.g., `v1.0.0`) are automatically published
+- **Pull Requests**: Images are built but not published for PRs
+
+### Manual Publishing
+```bash
+# Login to GHCR
+echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
+
+# Tag your image
+docker tag tools-via-api ghcr.io/USERNAME/tools_via_api:latest
+
+# Push to registry
+docker push ghcr.io/USERNAME/tools_via_api:latest
+```
+
+### Using Published Images
+```bash
+# Pull from GHCR
+docker pull ghcr.io/USERNAME/tools_via_api:latest
+
+# Run from GHCR
+docker run -p 5001:5001 ghcr.io/USERNAME/tools_via_api:latest
+```
 
 ## 📚 API Documentation
 
@@ -156,8 +251,11 @@ Analyzes PDF files for metadata and security information.
 {
   "tool": "PdfId",
   "result": {
-    "header": "PDF",
-    "version": "1.4",
+    "filename": "document.pdf",
+    "filesize": 2853,
+    "header": "%PDF-1.4",
+    "version": "0.2.7",
+    "isPdf": "True",
     "obj": 15,
     "endobj": 15,
     "stream": 2,
@@ -165,20 +263,20 @@ Analyzes PDF files for metadata and security information.
     "xref": 1,
     "trailer": 1,
     "startxref": 1,
-    "page": 1,
-    "encrypt": 0,
-    "objstm": 0,
-    "js": 0,
-    "javascript": 0,
-    "aa": 0,
-    "openaction": 0,
-    "acroform": 0,
-    "jbig2dec": 0,
-    "richmedia": 0,
-    "launch": 0,
-    "embeddedfile": 0,
-    "xfa": 0,
-    "colors": 0
+    "/Page": 1,
+    "/Encrypt": 0,
+    "/ObjStm": 0,
+    "/JS": 0,
+    "/JavaScript": 0,
+    "/AA": 0,
+    "/OpenAction": 0,
+    "/AcroForm": 0,
+    "/JBIG2Decode": 0,
+    "/RichMedia": 0,
+    "/Launch": 0,
+    "/EmbeddedFile": 0,
+    "/XFA": 0,
+    "/Colors > 2^24": 0
   }
 }
 ```
@@ -189,8 +287,14 @@ Analyzes PDF files for metadata and security information.
 tools_via_api/
 ├── app.py                 # Main Flask application entry point
 ├── requirements.txt       # Python dependencies
+├── Dockerfile            # Docker container definition
+├── docker-compose.yml    # Docker Compose configuration
+├── nginx.conf            # Nginx reverse proxy configuration
+├── .dockerignore         # Docker build exclusions
 ├── .gitignore            # Git ignore rules
 ├── README.md             # This file
+├── .github/workflows/    # GitHub Actions workflows
+│   └── docker-publish.yml # Docker build and publish workflow
 ├── routes/               # API route definitions
 │   ├── __init__.py
 │   └── tool_routes.py    # Tool execution endpoints
@@ -241,12 +345,19 @@ curl -X POST \
 ## 🧪 Testing
 
 ### Manual Testing
-1. Start the Flask server: `python app.py`
+1. Start the Flask server: `python app.py` or `docker-compose up`
 2. Use curl or any HTTP client to test endpoints
 3. Check server logs for debugging information
 
 ### Testing with Sample Files
 Create test PDF files or use existing ones to verify tool functionality.
+
+### Docker Testing
+```bash
+# Test the containerized version
+docker-compose up --build
+curl -X POST -F "file=@test.pdf" http://localhost:5001/tools/pdfid
+```
 
 ## 🐛 Troubleshooting
 
@@ -269,6 +380,14 @@ source .venv/bin/activate
 pip list
 ```
 
+#### Docker Issues
+**Problem**: Container won't start or build fails
+**Solution**: Check Docker logs and ensure all dependencies are properly specified:
+```bash
+docker-compose logs
+docker build --no-cache .
+```
+
 ### Debug Mode
 The application runs in debug mode by default. Check the terminal output for:
 - Request logs
@@ -280,6 +399,7 @@ The application runs in debug mode by default. Check the terminal output for:
 ### Environment Variables
 - `FLASK_ENV`: Set to `development` for debug mode (default)
 - `FLASK_DEBUG`: Set to `1` to enable debug mode (default)
+- `PORT`: Port to run the application on (default: 5001)
 
 ### Port Configuration
 The default port is 5001. To change it, modify `app.py`:
@@ -289,6 +409,9 @@ if __name__ == '__main__':
     app = create_app()
     app.run(debug=True, port=YOUR_PORT)
 ```
+
+### Docker Configuration
+Modify `docker-compose.yml` to change ports, environment variables, or add additional services.
 
 ## 🤝 Contributing
 
@@ -318,9 +441,11 @@ For issues and questions:
 - [ ] Add tool result caching
 - [ ] Implement async processing for large files
 - [ ] Add comprehensive test suite
-- [ ] Docker containerization
-- [ ] CI/CD pipeline setup
+- [ ] CI/CD pipeline setup (✅ Docker publishing)
+- [ ] Kubernetes deployment manifests
+- [ ] Monitoring and logging integration
+- [ ] API versioning support
 
 ---
 
-**Note**: This is a development server. For production use, deploy with a proper WSGI server like Gunicorn or uWSGI.
+**Note**: This is a development server. For production use, deploy with a proper WSGI server like Gunicorn or uWSGI, or use the provided Docker containers with a reverse proxy like Nginx.
