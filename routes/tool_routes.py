@@ -9,20 +9,18 @@ tool_bp = Blueprint('tools', __name__)
 
 @tool_bp.route('/tools/<tool_name>', methods=['POST'])
 def run_tool(tool_name):
-    """
-    Endpoint to run a specific tool by name.
-
-    :param tool_name: The name of the tool to run.
-    :return: JSON response with the result of the tool execution.
-    """
     tool = TOOLS.get(tool_name.lower())
     if not tool:
         return jsonify({"error": "Tool not found"}), 404
 
     try:
-        data = request.get_json() or {}
-        result = tool.run(data)
-        # Hier dann die Outputs des Tools zurückgeben
-        return jsonify({"tool": tool_name, "result": result}), 200
+        if "file" not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+
+        file_storage = request.files["file"]
+        result = tool.run(file_storage)
+
+        return jsonify({"tool": tool.name, "result": result})
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
