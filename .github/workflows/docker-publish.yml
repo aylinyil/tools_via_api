@@ -43,9 +43,10 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
+            type=sha,prefix=commit-
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -56,4 +57,4 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Output image digest
-        run: echo "Image digest:${{ steps.build.outputs.digest }}"
+        run: echo "Image digest: ${{ steps.build.outputs.digest }}"
