@@ -11,6 +11,12 @@ class Pdf2ImageTool(BaseTool):
     """
     A class to represent a PDF to Image conversion tool.
     This class converts PDF files into images and saves them to a (optional) password secured archive.
+
+    Example usage:
+    ❯ curl -X POST \
+     -F "file=@/<path-to-file>.pdf" \
+     -F "password=<your_password>" \
+     http://<domain>/tools/pdf2image
     """
 
     def __init__(self):
