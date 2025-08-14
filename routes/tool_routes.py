@@ -21,13 +21,14 @@ def run_tool(tool_name):
             return jsonify({"error": "No file uploaded"}), 400
 
         file_storage = request.files["file"]
+        password = request.form.get("password")
 
         if tool_name == "pdfid":
             result = tool.run(file_storage)
             return jsonify({"tool": tool.name, "result": result})
 
         elif tool_name == "pdf2image":
-            return tool.run(file_storage)
+            return tool.run(file_storage, password=password)
 
         else:
             return jsonify({"error": "Tool not supported"}), 400
